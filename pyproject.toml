@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "androidkit"
-version = "0.1.1"
+version = "0.1.2"
 description = "Swiss army knife library for interacting with android things"
 readme = "README.md"
 authors = [
@@ -19,7 +19,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries"
 ]
 dependencies = [
-    "requests>=2.32.4"
+    "requests>=2.32.4",
+    "selectolax>=0.4.4",
 ]
 
 

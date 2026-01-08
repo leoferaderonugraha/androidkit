@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).parent
 
 setup(
     name="androidkit",
-    version="0.1.0",
+    version="0.1.2",
     description="Swiss army knife library for interacting with android things",
     author="Leo Feradero Nugraha",
     author_email="leoferaderonugraha@gmail.com",
