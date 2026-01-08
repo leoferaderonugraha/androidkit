@@ -1,15 +1,14 @@
 import requests
 
 from .base import Source
+from selectolax.parser import HTMLParser
 
 
 class ApkPure(Source):
     def __init__(self) -> None:
-        self.download_url = "https://d.apkpure.com/b/XAPK/{}?version={}"
-        self.search_url = (
-            "https://apkpure.com/api/v1/search_suggestion_new?key={}&limit={}"
-        )
-        self.headers: dict[str, str] = {
+        self._download_url = "https://d.apkpure.com/b/XAPK/{}?version={}"
+        self._search_url = "https://apkpure.com/search?q={}"
+        self._headers: dict[str, str] = {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                 "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -22,29 +21,30 @@ class ApkPure(Source):
         package_name: str, version:
         str = 'latest'
     ) -> str:
-        return self.download_url.format(package_name, version)
+        return self._download_url.format(package_name, version)
 
     def search(self, keyword: str, limit: int = 20) -> list[dict]:
-        url: str = self.search_url.format(keyword, limit)
-        response: requests.Response = requests.get(url, headers=self.headers)
-        try:
-            items: list[dict] = []
-            for item in response.json():
-                if item.get('title') is None:
-                    continue
+        url: str = self._search_url.format(keyword, limit)
+        response: requests.Response = requests.get(url, headers=self._headers)
+        tree = HTMLParser(response.text)
+        apps = []
+        for node in tree.css('li > dl[data-dt-recid]'):
+            name = node.css_first('p.p1').text().strip()
+            developer = node.css_first('p.p2').text().strip()
+            rating = node.css_first('span.star').text().strip()
+            img = node.css_first('div.l > img').attrs.get('src')
+            package_name = (
+                node.css_first('a.dd')
+                .attrs.get('href', '')
+                .split('/')[-1]
+            )
 
-                items.append({
-                    'title': item.get('title'),
-                    'icon_url': item.get('icon'),
-                    'version': item.get('version'),
-                    'total_install': item.get('installTotal'),
-                    'score': item.get('score'),
-                    'score_total': item.get('scoreTotal'),
-                    'package_name': item.get('packageName'),
-                    'file_size': item.get('fileSize'),  # file size is in bytes
-                    'tags': [tag.get('name') for tag in item.get('tags', [])],
-                })
+            apps.append({
+                'name': name,
+                'package_name': package_name,
+                'icon_url': img,
+                'developer': developer,
+                'rating': rating or 'N/A',
+            })
 
-            return items
-        except ValueError:
-            return []
+        return apps
